@@ -1,0 +1,2371 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GREEN FACTORY</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+@font-face {
+  font-family: 'DungGeunMo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2107@1.1/DungGeunMo.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+</style>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+:root {
+  --ink: #343b43;
+  --cream: #f5e6bd;
+  --green: #83b86c;
+  --orange: #f28b43;
+  --red: #bd5145;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #252b31;
+  color: var(--ink);
+  font-family: 'DungGeunMo', 'Press Start 2P', monospace;
+  font-weight: 400;
+  overflow-x: hidden;
+  image-rendering: pixelated;
+}
+
+button {
+  font-family: 'DungGeunMo', 'Press Start 2P', monospace;
+  font-weight: 400;
+  font-size: 17px;
+  color: var(--ink);
+  background: #f4ce75;
+  border: 4px solid var(--ink);
+  padding: 13px 20px;
+  box-shadow: 5px 5px 0 #17191d;
+  cursor: pointer;
+}
+
+button:active {
+  transform: translate(3px,3px);
+  box-shadow: 2px 2px 0 #17191d;
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+#app {
+  width: min(1100px,96%);
+  margin: 18px auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #f4e7c5;
+  border: 5px solid var(--ink);
+  padding: 13px 16px;
+  box-shadow: 6px 6px 0 #111;
+  margin-bottom: 15px;
+}
+
+.logo {
+  font-family: 'Press Start 2P', 'DungGeunMo', monospace;
+  font-size: 17px;
+  color: #497847;
+  letter-spacing: 1px;
+}
+
+.status {
+  font-family: 'DungGeunMo', 'Press Start 2P', monospace;
+  font-size: 17px;
+}
+
+.screen {
+  display: none;
+  animation: screenIn .45s steps(5);
+}
+
+.screen.active {
+  display: block;
+}
+
+@keyframes screenIn {
+  from { opacity: 0; transform: scale(.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.game-frame {
+  position: relative;
+  overflow: hidden;
+  border: 7px solid var(--ink);
+  background: #6f995b;
+  box-shadow: 8px 8px 0 #111;
+  min-height: 550px;
+}
+
+/* 픽셀 격자 */
+.game-frame:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 5px,
+      rgba(0,0,0,.045) 6px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 5px,
+      rgba(0,0,0,.025) 6px
+    );
+  opacity: .45;
+}
+
+.stage-screen {
+  position: relative;
+  min-height: 550px;
+  overflow: hidden;
+}
+
+.stage-header {
+  font-family: 'DungGeunMo', monospace;
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px;
+  background: rgba(39,48,43,.9);
+  color: #f8edcf;
+  border-bottom: 5px solid #171e1b;
+}
+
+.stage-name {
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.stage-number {
+  font-size: 16px;
+  color: #f4ce75;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.scene-caption {
+  position: absolute;
+  top: 100px;
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+  color: #fff0c9;
+  text-shadow: 3px 3px #493a31;
+  z-index: 10;
+}
+
+
+
+/* ---------------- 움직이는 컨베이어 벨트 ---------------- */
+.conveyor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 88px;
+  height: 58px;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.conveyor-belt {
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: 0;
+  height: 29px;
+  border-top: 5px solid #343b43;
+  border-bottom: 5px solid #343b43;
+  background: repeating-linear-gradient(
+    90deg,
+    #59666a 0 18px,
+    #87918b 18px 25px,
+    #59666a 25px 43px
+  );
+  background-size: 86px 29px;
+  animation: beltScroll .65s steps(6) infinite;
+  box-shadow: 0 5px 0 rgba(0,0,0,.22);
+}
+
+.conveyor-belt::before,
+.conveyor-belt::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  width: 13px;
+  height: 13px;
+  background: #d6c49a;
+  border: 3px solid #343b43;
+}
+.conveyor-belt::before { left: 8%; }
+.conveyor-belt::after { right: 8%; }
+
+.conveyor-items {
+  position: absolute;
+  left: -15%;
+  bottom: 25px;
+  display: flex;
+  align-items: end;
+  gap: 54px;
+  width: max-content;
+  animation: itemsTravel 8s linear infinite;
+}
+
+.belt-bottle {
+  position: relative;
+  width: 22px;
+  height: 32px;
+  flex: 0 0 22px;
+  background: #67b9c5;
+  border: 3px solid #343b43;
+  box-shadow: inset 5px 0 rgba(255,255,255,.28);
+}
+.belt-bottle::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: -9px;
+  width: 8px;
+  height: 8px;
+  background: #8bd0d0;
+  border: 2px solid #343b43;
+}
+.belt-bottle::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 9px;
+  width: 10px;
+  height: 5px;
+  background: rgba(255,255,255,.45);
+}
+.belt-bottle:nth-child(2n) { height: 27px; background: #83c8d0; }
+.belt-bottle:nth-child(3n) { height: 35px; background: #4d9cae; }
+
+/* STEP 2: 분쇄된 플라스틱 조각 */
+.conveyor-flakes .belt-bottle {
+  width: 18px;
+  height: 15px;
+  flex-basis: 18px;
+  background: #83c8d0;
+  transform: rotate(8deg);
+  box-shadow: 12px -8px 0 -3px #4d9cae, 24px 2px 0 -4px #b5d7c2;
+}
+.conveyor-flakes .belt-bottle::before,
+.conveyor-flakes .belt-bottle::after { display: none; }
+.conveyor-flakes .belt-bottle:nth-child(2n) { height: 11px; transform: rotate(-12deg); }
+
+/* STEP 3: 재활용 원료 블록 */
+.conveyor-blocks .belt-bottle {
+  width: 30px;
+  height: 24px;
+  flex-basis: 30px;
+  background: #76b5a0;
+  box-shadow: inset 5px 5px #a9d5b8;
+}
+.conveyor-blocks .belt-bottle::before {
+  content: "♻";
+  left: 4px;
+  top: 1px;
+  width: 15px;
+  height: 16px;
+  color: #315c4c;
+  background: transparent;
+  border: 0;
+  font: bold 13px sans-serif;
+}
+.conveyor-blocks .belt-bottle::after { display: none; }
+
+@keyframes beltScroll {
+  from { background-position: 0 0; }
+  to { background-position: -86px 0; }
+}
+@keyframes itemsTravel {
+  from { transform: translateX(0); }
+  to { transform: translateX(-360px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conveyor-belt, .conveyor-items { animation-duration: 3s; }
+}
+
+/* ---------------- STEP 1 ---------------- */
+
+#stage1 .scene {
+  background-color: #9a7957;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 38px,
+      rgba(67,49,37,.15) 39px 41px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 38px,
+      rgba(67,49,37,.15) 39px 41px
+    );
+}
+
+.crush-area {
+  position: relative;
+  width: min(650px,90%);
+  height: 340px;
+  margin-top: 90px;
+}
+
+.crush-floor {
+  position: absolute;
+  bottom: 30px;
+  left: 5%;
+  width: 90%;
+  height: 65px;
+  background: #785638;
+  border: 4px solid #493a31;
+  box-shadow: 0 10px 0 rgba(0,0,0,.2);
+}
+
+/* 작업자 */
+.worker {
+  position: absolute;
+  left: 12%;
+  bottom: 90px;
+  width: 100px;
+  height: 155px;
+  z-index: 5;
+}
+
+.worker-head {
+  position: absolute;
+  top: 0;
+  left: 25px;
+  width: 65px;
+  height: 58px;
+  background: #efbd8a;
+  border: 4px solid #493a31;
+}
+
+.worker-hair {
+  position: absolute;
+  top: -8px;
+  left: 20px;
+  width: 75px;
+  height: 25px;
+  background: #67452f;
+  border: 3px solid #493a31;
+  z-index: 2;
+}
+
+.worker-eye {
+  position: absolute;
+  top: 27px;
+  left: 43px;
+  width: 7px;
+  height: 7px;
+  background: #302b35;
+  box-shadow: 25px 0 #302b35;
+  z-index: 3;
+}
+
+.worker-body {
+  position: absolute;
+  top: 58px;
+  left: 15px;
+  width: 85px;
+  height: 65px;
+  background: #548da0;
+  border: 4px solid #493a31;
+}
+
+.worker-leg {
+  position: absolute;
+  bottom: 0;
+  left: 25px;
+  width: 20px;
+  height: 35px;
+  background: #51443b;
+  box-shadow: 35px 0 #51443b;
+}
+
+.worker-arm {
+  position: absolute;
+  top: 68px;
+  right: -15px;
+  width: 22px;
+  height: 65px;
+  background: #efbd8a;
+  border: 3px solid #493a31;
+  transform: rotate(-25deg);
+  transform-origin: top center;
+  z-index: 6;
+}
+
+/* 망치 */
+.hammer {
+  position: absolute;
+  left: 44%;
+  bottom: 180px;
+  width: 18px;
+  height: 105px;
+  background: #98683f;
+  border: 3px solid #493a31;
+  transform: rotate(35deg);
+  transform-origin: bottom center;
+  z-index: 8;
+  opacity: 0;
+}
+
+.hammer:before {
+  content: "";
+  position: absolute;
+  top: -13px;
+  left: -25px;
+  width: 60px;
+  height: 28px;
+  background: #9ba3a0;
+  border: 3px solid #493a31;
+}
+
+#stage1 .crush-area.hit .hammer {
+  opacity: 1;
+  animation: hammerHit .32s steps(4);
+}
+
+#stage1 .crush-area.hit .worker-arm {
+  animation: armHit .32s steps(3);
+}
+
+#stage1 .crush-area.hit .plastic {
+  animation: plasticShake .32s steps(3);
+}
+
+.game-frame.hit-shake {
+  animation: tinyScreenShake .16s steps(3);
+}
+@keyframes tinyScreenShake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, 1px); }
+}
+
+@keyframes hammerHit {
+  0% { transform: rotate(35deg); }
+  45% { transform: rotate(-55deg); }
+  70% { transform: rotate(-35deg); }
+  100% { transform: rotate(35deg); }
+}
+
+@keyframes armHit {
+  0% { transform: rotate(-25deg); }
+  50% { transform: rotate(-75deg); }
+  100% { transform: rotate(-25deg); }
+}
+
+@keyframes plasticShake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); }
+}
+
+.plastic {
+  position: absolute;
+  left: 55%;
+  bottom: 95px;
+  width: 115px;
+  height: 95px;
+  background: #4d9cae;
+  border: 7px solid #493a31;
+  z-index: 4;
+  box-shadow: inset 10px 10px #80c1c9;
+  transition: transform .3s, opacity .3s;
+}
+
+.plastic:before {
+  content: "";
+  position: absolute;
+  top: -25px;
+  left: 20px;
+  width: 65px;
+  height: 22px;
+  background: #79bac2;
+  border: 4px solid #493a31;
+}
+
+.plastic:after {
+  content: "";
+  position: absolute;
+  top: 25px;
+  left: 35px;
+  width: 35px;
+  height: 30px;
+  background: #b5d7c2;
+  border: 4px solid #493a31;
+}
+
+.crushed-piece {
+  position: absolute;
+  display: none;
+  width: 20px;
+  height: 20px;
+  background: #4d9cae;
+  border: 4px solid #493a31;
+}
+
+.crushed-piece.p1 { left: 56%; bottom: 65px; }
+.crushed-piece.p2 { left: 68%; bottom: 55px; }
+.crushed-piece.p3 { left: 63%; bottom: 85px; }
+.crushed-piece.p4 { left: 76%; bottom: 75px; }
+
+#stage1.done .plastic {
+  transform: scale(.55,.35);
+  opacity: .35;
+}
+
+#stage1.done .crushed-piece {
+  display: block;
+}
+
+/* ---------------- STEP 2 ---------------- */
+
+#stage2 .scene {
+  background-color: #493c3a;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 40px,
+      rgba(255,255,255,.035) 40px 42px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 40px,
+      rgba(255,255,255,.035) 40px 42px
+    );
+}
+
+.furnace {
+  position: relative;
+  width: min(570px,85%);
+  height: 350px;
+  margin-top: 90px;
+  background: #9a6650;
+  border: 12px solid #302b35;
+  box-shadow: inset 0 0 0 8px #c08a60, 10px 10px 0 #211d20;
+}
+
+.furnace-top {
+  position: absolute;
+  top: -45px;
+  left: 10%;
+  width: 80%;
+  height: 45px;
+  background: #d09a68;
+  border: 8px solid #302b35;
+}
+
+.furnace-mouth {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 20px;
+  height: 210px;
+  background: #28272e;
+  border: 8px solid #302b35;
+  overflow: hidden;
+}
+
+.liquid {
+  position: absolute;
+  bottom: -15px;
+  left: 0;
+  width: 100%;
+  height: 20%;
+  background: #df5c2c;
+  border-top: 9px solid #ffb64c;
+  transition: height .35s;
+  overflow: hidden;
+}
+
+.liquid:before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: -10%;
+  width: 120%;
+  height: 30px;
+  background: #ffb84d;
+  border-radius: 50%;
+  animation: lavaWave .7s ease-in-out infinite alternate;
+}
+
+.liquid:after {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 20%;
+  width: 20px;
+  height: 18px;
+  background: #ffe08a;
+  box-shadow: 95px 15px #ffcf61, 190px -4px #ffe08a;
+}
+
+@keyframes lavaWave {
+  from { transform: translateX(-15px); }
+  to { transform: translateX(15px); }
+}
+
+.bubble {
+  position: absolute;
+  bottom: 30px;
+  width: 18px;
+  height: 18px;
+  background: #ffc65d;
+  border: 4px solid #a7462c;
+  opacity: 0;
+}
+
+.bubble.b1 { left: 20%; }
+.bubble.b2 { left: 50%; }
+.bubble.b3 { left: 75%; }
+
+#stage2.melting .bubble {
+  animation: bubbleUp 1s steps(5) infinite;
+}
+
+#stage2.melting .bubble.b2 { animation-delay: .3s; }
+#stage2.melting .bubble.b3 { animation-delay: .6s; }
+
+@keyframes bubbleUp {
+  0% { opacity: 0; transform: translateY(0); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-130px); }
+}
+
+.melted-object {
+  position: absolute;
+  top: 35px;
+  left: 25%;
+  width: 50%;
+  height: 45px;
+  background: #4d9cae;
+  border: 4px solid #302b35;
+  box-shadow: inset 5px 5px #80c1c9;
+  transition: top .22s steps(3), height .22s steps(3),
+              width .22s steps(3), left .22s steps(3),
+              background .22s steps(2), transform .22s steps(3);
+}
+
+/* 현재 온도에서 목표 온도까지 20%씩 도달할 때마다 변화 */
+#stage2.melting.melt-step-1 .melted-object {
+  top: 48px; height: 40px; width: 48%; left: 26%;
+  background: #68a99d; transform: scaleX(1.03);
+}
+#stage2.melting.melt-step-2 .melted-object {
+  top: 62px; height: 34px; width: 46%; left: 27%;
+  background: #91a66f; transform: scaleX(1.08);
+}
+#stage2.melting.melt-step-3 .melted-object {
+  top: 76px; height: 27px; width: 52%; left: 24%;
+  background: #c58b4b; transform: scaleX(1.13);
+}
+#stage2.melting.melt-step-4 .melted-object {
+  top: 91px; height: 21px; width: 56%; left: 22%;
+  background: #e17a35; transform: scaleX(1.17);
+}
+#stage2.melting.melt-step-5 .melted-object {
+  top: 108px; height: 16px; width: 62%; left: 19%;
+  background: #f08a37; border-color: #a94c2c;
+  border-radius: 45%; transform: scaleX(1.2);
+}
+
+/* 100% 용융 완료: 고체 플라스틱은 사라지고 용융액이 용광로를 채움 */
+#stage2.melt-complete .melted-object {
+  opacity: 0;
+  transform: scale(.2);
+}
+#stage2.melt-complete .liquid {
+  height: 100% !important;
+}
+
+.temp-waiting {
+  position: absolute;
+  z-index: 18;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  width: min(82%, 420px);
+  padding: 15px 18px;
+  color: #fff0c9;
+  background: rgba(35, 35, 39, .94);
+  border: 4px solid #f4ce75;
+  box-shadow: 5px 5px 0 rgba(0,0,0,.35);
+  text-align: center;
+  font-size: 19px;
+  line-height: 1.65;
+  animation: waitBlink 1s steps(2) infinite;
+}
+.temp-waiting[hidden] { display: none; }
+@keyframes waitBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .78; }
+}
+
+/* ---------------- STEP 3 ---------------- */
+
+#stage3 .scene {
+  background-color: #829e76;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 40px,
+      rgba(44,75,44,.12) 40px 42px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 40px,
+      rgba(44,75,44,.12) 40px 42px
+    );
+}
+
+.press-machine {
+  position: relative;
+  width: min(550px,85%);
+  height: 370px;
+  margin-top: 100px;
+  background: #6b7774;
+  border: 12px solid #302b35;
+  box-shadow: 10px 10px 0 rgba(0,0,0,.3);
+}
+
+.press-roof {
+  position: absolute;
+  top: -15px;
+  left: -20px;
+  width: calc(100% + 40px);
+  height: 65px;
+  background: #a9b6a9;
+  border: 9px solid #302b35;
+}
+
+.press-pillar {
+  position: absolute;
+  top: 40px;
+  bottom: 0;
+  left: 12%;
+  width: 35px;
+  background: #9aa59b;
+  border: 4px solid #302b35;
+  z-index: 2;
+}
+
+.press-pillar.right {
+  left: auto;
+  right: 12%;
+}
+
+.press-rod {
+  position: absolute;
+  left: 45%;
+  top: 45px;
+  width: 50px;
+  height: 85px;
+  background: #d3c7a1;
+  border: 4px solid #302b35;
+  z-index: 4;
+}
+
+.press-plate {
+  position: absolute;
+  left: 18%;
+  top: 125px;
+  width: 64%;
+  height: 38px;
+  background: #aab8a6;
+  border: 8px solid #302b35;
+  z-index: 5;
+  transition: top .08s linear;
+}
+
+.press-floor {
+  position: absolute;
+  left: 18%;
+  bottom: 30px;
+  width: 64%;
+  height: 45px;
+  background: #986b45;
+  border: 8px solid #302b35;
+}
+
+.press-material {
+  position: absolute;
+  left: 34%;
+  bottom: 75px;
+  width: 32%;
+  height: 60px;
+  background: #76b5a0;
+  border: 4px solid #302b35;
+  z-index: 3;
+  transition: height .08s linear;
+}
+
+/* ---------------- 공통 UI ---------------- */
+
+.info-panel {
+  position: absolute;
+  top: 92px;
+  right: 16px;
+  left: auto;
+  bottom: auto;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 9px;
+  width: 178px;
+  background: rgba(39,43,45,.94);
+  color: #f5e6bd;
+  border: 4px solid #171d1d;
+  padding: 11px 12px;
+  flex-wrap: nowrap;
+}
+.info-panel .info-main {
+  width: 100%;
+}
+.info-panel .info-value {
+  margin-top: 2px;
+}
+.info-panel .mini-progress {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.info-main {
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.info-value {
+  font-size: 23px;
+  color: #f4ce75;
+  margin-top: 5px;
+}
+
+.mini-progress {
+  width: 150px;
+  height: 17px;
+  background: #252b31;
+  border: 3px solid #f5e6bd;
+}
+
+.mini-progress div {
+  height: 100%;
+  width: 0;
+  background: #8ecb6b;
+  transition: width .2s;
+}
+
+.dialogue {
+  font-family: 'DungGeunMo', monospace;
+  background: #f5e6bd;
+  border: 5px solid #302b35;
+  box-shadow: 5px 5px 0 #111;
+  padding: 14px;
+  margin-top: 14px;
+  min-height: 65px;
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+/* ---------------- 시작 화면 ---------------- */
+
+.intro {
+  text-align: center;
+  padding: 45px 20px;
+  background: #87aa69;
+  min-height: 550px;
+  color: #fff1c9;
+}
+
+.intro h1 {
+  font-size: clamp(28px,5vw,42px);
+  line-height: 1.5;
+  text-shadow: 5px 5px #426b43;
+}
+
+.intro p {
+  font-size: 21px;
+  line-height: 1.8;
+  text-shadow: 2px 2px #426b43;
+}
+
+/* ---------------- 픽셀 로봇 ---------------- */
+
+.pixel-bot {
+  position: relative;
+  width: 112px;
+  height: 136px;
+  margin: 30px auto;
+  transform-origin: center;
+  image-rendering: pixelated;
+  animation: robotIdle 1s steps(2) infinite;
+}
+
+.bot-head {
+  position: absolute;
+  left: 22px;
+  top: 14px;
+  width: 70px;
+  height: 57px;
+  background: #d9e7d9;
+  border: 4px solid #343b43;
+  box-shadow: inset 0 -8px #a8c7b1;
+  z-index: 3;
+}
+
+.bot-antenna {
+  position: absolute;
+  left: 53px;
+  top: 0;
+  width: 7px;
+  height: 17px;
+  background: #343b43;
+}
+
+.bot-antenna:after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: -5px;
+  width: 19px;
+  height: 12px;
+  background: #f3bd55;
+  border: 4px solid #343b43;
+}
+
+.bot-eyes {
+  position: absolute;
+  top: 23px;
+  left: 15px;
+  width: 10px;
+  height: 12px;
+  background: #343b43;
+  box-shadow: 32px 0 #343b43;
+}
+
+.bot-mouth {
+  position: absolute;
+  left: 27px;
+  top: 43px;
+  width: 20px;
+  height: 8px;
+  border-bottom: 5px solid #343b43;
+  border-radius: 0 0 50% 50%;
+}
+
+.bot-body {
+  position: absolute;
+  left: 30px;
+  top: 70px;
+  width: 53px;
+  height: 43px;
+  background: #79b9a0;
+  border: 4px solid #343b43;
+  z-index: 2;
+}
+
+.bot-core {
+  position: absolute;
+  left: 15px;
+  top: 10px;
+  width: 16px;
+  height: 16px;
+  background: #f5ce72;
+  border: 3px solid #343b43;
+}
+
+.bot-arm {
+  position: absolute;
+  top: 74px;
+  width: 15px;
+  height: 37px;
+  background: #d9e7d9;
+  border: 3px solid #343b43;
+  z-index: 1;
+}
+
+.bot-arm.left { left: 12px; }
+.bot-arm.right { right: 12px; }
+
+.bot-leg {
+  position: absolute;
+  top: 110px;
+  width: 17px;
+  height: 23px;
+  background: #7b8990;
+  border: 3px solid #343b43;
+}
+
+.bot-leg.left { left: 34px; }
+.bot-leg.right { right: 34px; }
+
+@keyframes robotIdle {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ---------------- 엔딩 화면 ---------------- */
+
+.ending {
+  text-align: center;
+  padding: 50px 15px;
+  min-height: 550px;
+  background: #83b86c;
+  color: #fff3cf;
+}
+
+.ending h1 {
+  font-size: clamp(24px,5vw,38px);
+  line-height: 1.5;
+  text-shadow: 4px 4px #426b43;
+}
+
+.ending p {
+  font-size: 21px;
+  line-height: 1.8;
+}
+
+/* 신나게 뛰는 로봇 */
+.ending .pixel-bot {
+  animation: happyJump .55s steps(4) infinite;
+}
+
+@keyframes happyJump {
+  0% {
+    transform: translateY(0) rotate(0);
+  }
+  25% {
+    transform: translateY(-18px) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(-38px) rotate(0);
+  }
+  75% {
+    transform: translateY(-18px) rotate(5deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+}
+
+.ending .bot-arm.left {
+  animation: leftWave .55s steps(3) infinite;
+  transform-origin: top center;
+}
+
+.ending .bot-arm.right {
+  animation: rightWave .55s steps(3) infinite;
+  transform-origin: top center;
+}
+
+@keyframes leftWave {
+  0%,100% { transform: rotate(0); }
+  50% { transform: rotate(-65deg); }
+}
+
+@keyframes rightWave {
+  0%,100% { transform: rotate(0); }
+  50% { transform: rotate(65deg); }
+}
+
+
+/* ---------------- 재활용 스토리텔링 엔딩 ---------------- */
+.story-ending {
+  min-height: 550px;
+  padding: 30px 24px 34px;
+  text-align: center;
+  color: #fff3cf;
+  background:
+    radial-gradient(circle at 50% 70%, rgba(255,255,255,.2), transparent 42%),
+    linear-gradient(180deg, #8bbd75, #5e9566);
+}
+.story-ending h1 {
+  margin: 8px 0 12px;
+  font-size: clamp(23px, 4vw, 34px);
+  line-height: 1.5;
+  text-shadow: 4px 4px #426b43;
+}
+.story-dialogue-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 28px);
+  width: min(900px, 100%);
+  min-height: 190px;
+  margin: 12px auto 18px;
+}
+.story-ending .pixel-bot {
+  flex: 0 0 112px;
+  margin: 0;
+  transform: scale(.82);
+  transform-origin: center;
+  animation: happyJump .75s steps(4) infinite;
+}
+.story-bubble {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 180px;
+  margin: 0;
+  padding: 24px 28px;
+  color: #343b43;
+  background: #fff4d4;
+  border: 5px solid #343b43;
+  box-shadow: 6px 6px 0 rgba(0,0,0,.28);
+  font-size: clamp(21px, 2.65vw, 27px);
+  line-height: 1.65;
+  text-align: left;
+  white-space: normal;
+}
+.story-bubble:after {
+  content: "";
+  position: absolute;
+  left: -17px;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  background: #fff4d4;
+  border-left: 5px solid #343b43;
+  border-bottom: 5px solid #343b43;
+  transform: translateY(-50%) rotate(45deg);
+}
+.product-row {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  gap: clamp(18px, 5vw, 52px);
+  margin: 28px auto 24px;
+  min-height: 125px;
+}
+.product-item {
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  color: #fff7d9;
+  font-size: 16px;
+  text-shadow: 2px 2px #426b43;
+}
+.product-art {
+  position: relative;
+  width: 76px;
+  height: 78px;
+  image-rendering: pixelated;
+  filter: drop-shadow(4px 5px 0 rgba(0,0,0,.22));
+}
+.product-bottle {
+  width: 37px;
+  height: 58px;
+  margin-top: 18px;
+  background: #7fd0c4;
+  border: 4px solid #343b43;
+  box-shadow: inset 7px 0 rgba(255,255,255,.35);
+}
+.product-bottle:before {
+  content: "";
+  position: absolute;
+  left: 25px;
+  top: 7px;
+  width: 18px;
+  height: 14px;
+  background: #7fd0c4;
+  border: 4px solid #343b43;
+  border-bottom: 0;
+}
+.product-bottle:after {
+  content: "";
+  position: absolute;
+  left: 30px;
+  top: 0;
+  width: 12px;
+  height: 9px;
+  background: #f4ce75;
+  border: 3px solid #343b43;
+}
+.product-pot {
+  width: 65px;
+  height: 46px;
+  margin-top: 32px;
+  background: #e58d59;
+  border: 4px solid #343b43;
+  clip-path: polygon(0 0,100% 0,84% 100%,16% 100%);
+}
+.product-pot:before {
+  content: "";
+  position: absolute;
+  left: 31px;
+  top: 0;
+  width: 7px;
+  height: 35px;
+  background: #477b4c;
+  box-shadow: -13px 12px 0 -1px #477b4c, 13px 12px 0 -1px #477b4c;
+}
+.product-box {
+  width: 67px;
+  height: 53px;
+  margin-top: 25px;
+  background: #f0c76b;
+  border: 4px solid #343b43;
+  box-shadow: inset 0 10px #ffe3a0;
+}
+.product-box:before {
+  content: "♻";
+  position: absolute;
+  inset: 8px 0 0;
+  color: #477b4c;
+  font: bold 27px sans-serif;
+}
+.story-note {
+  margin: 4px auto 18px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #fff7d9;
+}
+@media(max-width:600px) {
+  .story-ending { padding: 20px 10px 25px; }
+  .story-dialogue-row { gap: 8px; min-height: 170px; }
+  .story-ending .pixel-bot { flex-basis: 88px; transform: scale(.66); }
+  .story-bubble { min-height: 155px; padding: 16px 14px; font-size: clamp(18px, 4.2vw, 23px); line-height: 1.55; }
+  .product-item { width: 88px; font-size: 14px; }
+  .product-row { gap: 8px; }
+}
+
+
+/* ---------------- 압축 완료 축하 오버레이 ---------------- */
+.complete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(255,255,255,.60);
+  text-align: center;
+}
+.complete-overlay.active { display: flex; animation: screenIn .35s steps(5); }
+.complete-card {
+  width: min(760px, 96vw);
+  padding: clamp(22px, 4vw, 42px);
+  background: rgba(255,255,255,.88);
+  border: 6px solid #343b43;
+  box-shadow: 9px 9px 0 rgba(0,0,0,.28);
+}
+.complete-title {
+  margin: 0 0 12px;
+  color: #f2bd35;
+  font-family: 'Press Start 2P', 'DungGeunMo', monospace;
+  font-size: clamp(30px, 7vw, 64px);
+  line-height: 1.35;
+  letter-spacing: 1px;
+  text-shadow: 4px 4px #343b43;
+}
+.complete-copy {
+  margin: 0;
+  color: #343b43;
+  font-family: Arial, 'Malgun Gothic', sans-serif;
+  font-size: clamp(17px, 2.5vw, 24px);
+  font-weight: 700;
+  line-height: 1.7;
+}
+.complete-overlay .pixel-bot { margin: 12px auto 0; }
+.story-visual[hidden], .story-controls[hidden] { display: none !important; }
+.story-controls { margin: 8px auto 14px; }
+
+/* 반응형 */
+@media(max-width:600px) {
+  #app {
+    width: 96%;
+    margin: 8px auto;
+  }
+
+  .game-frame,
+  .stage-screen {
+    min-height: 570px;
+  }
+
+  .stage-header {
+    padding: 13px;
+  }
+
+  .stage-name {
+    font-size: 16px;
+  }
+
+  .crush-area {
+    transform: scale(.85);
+    transform-origin: center;
+  }
+
+  .furnace {
+    height: 300px;
+  }
+
+  .press-machine {
+    height: 320px;
+  }
+
+  .info-panel {
+    top: 82px;
+    right: 8px;
+    left: auto;
+    bottom: auto;
+    width: 142px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .info-main {
+    font-size: 14px;
+  }
+
+  .info-value {
+    font-size: 19px;
+  }
+
+  .dialogue {
+    font-size: 17px;
+  }
+
+  .logo {
+    font-size: 13px;
+  }
+
+  .temp-waiting {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  button {
+    font-size: 15px;
+    padding: 11px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+
+<header class="topbar">
+  <div class="logo">GREEN FACTORY</div>
+  <div>
+    <span class="status" id="connectionStatus">● 연결 대기</span>
+    <button id="connectBtn" onclick="connectArduino()">CONNECT</button>
+  </div>
+</header>
+
+<!-- 압축 직후 표시되는 축하 오버레이 -->
+<div class="complete-overlay" id="completeOverlay" role="status" aria-live="polite">
+  <div class="complete-card">
+    <h1 class="complete-title">COMPLETE!</h1>
+    <p class="complete-copy" id="completeMessage">
+      모든 압축 과정이 끝났어!<br>
+      축하 노래가 끝나면 로봇과 함께 재활용 이야기를 만나 보자!
+    </p>
+    <div class="pixel-bot" aria-hidden="true">
+      <div class="bot-antenna"></div>
+      <div class="bot-head"><div class="bot-eyes"></div><div class="bot-mouth"></div></div>
+      <div class="bot-body"><div class="bot-core"></div></div>
+      <div class="bot-arm left"></div><div class="bot-arm right"></div>
+      <div class="bot-leg left"></div><div class="bot-leg right"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 시작 화면 -->
+<section id="introScreen" class="screen active">
+  <div class="game-frame">
+    <div class="intro">
+
+      <div class="pixel-bot">
+        <div class="bot-antenna"></div>
+        <div class="bot-head">
+          <div class="bot-eyes"></div>
+          <div class="bot-mouth"></div>
+        </div>
+        <div class="bot-body">
+          <div class="bot-core"></div>
+        </div>
+        <div class="bot-arm left"></div>
+        <div class="bot-arm right"></div>
+        <div class="bot-leg left"></div>
+        <div class="bot-leg right"></div>
+      </div>
+
+      <h1>GREEN<br>FACTORY</h1>
+      <p>PLASTIC RECYCLING ADVENTURE</p>
+      <p id="introMessage">먼저 아두이노를 연결해 주세요.</p>
+      <button id="startButton" onclick="startGame()" disabled>
+        START GAME
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 1 -->
+<section id="stage1" class="screen">
+  <div class="game-frame stage-screen">
+
+    <div class="stage-header">
+      <div class="stage-name">STEP 01<br>플라스틱 분쇄</div>
+      <div class="stage-number">01 / 03</div>
+    </div>
+
+    <div class="scene">
+      <div class="conveyor conveyor-blocks" aria-hidden="true">
+        <div class="conveyor-items">
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+        </div>
+        <div class="conveyor-belt"></div>
+      </div>
+      <div class="conveyor conveyor-flakes" aria-hidden="true">
+        <div class="conveyor-items">
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+        </div>
+        <div class="conveyor-belt"></div>
+      </div>
+      <div class="conveyor conveyor-bottles" aria-hidden="true">
+        <div class="conveyor-items">
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+          <span class="belt-bottle"></span><span class="belt-bottle"></span>
+        </div>
+        <div class="conveyor-belt"></div>
+      </div>
+      <div class="scene-caption">PLASTIC SHREDDING ZONE</div>
+
+      <div class="crush-area" id="crushArea">
+        <div class="crush-floor"></div>
+
+        <div class="worker">
+          <div class="worker-hair"></div>
+          <div class="worker-head"></div>
+          <div class="worker-eye"></div>
+          <div class="worker-body"></div>
+          <div class="worker-leg"></div>
+          <div class="worker-arm"></div>
+        </div>
+
+        <div class="hammer"></div>
+        <div class="plastic"></div>
+
+        <div class="crushed-piece p1"></div>
+        <div class="crushed-piece p2"></div>
+        <div class="crushed-piece p3"></div>
+        <div class="crushed-piece p4"></div>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-main">
+        분쇄 횟수
+        <div class="info-value" id="crushCount">0 / 10</div>
+      </div>
+      <div class="mini-progress">
+        <div id="crushBar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dialogue" id="crushDialogue">
+    작업자: 버튼을 누를 때마다 망치로 플라스틱을 부술게!
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section id="stage2" class="screen">
+  <div class="game-frame stage-screen">
+
+    <div class="stage-header">
+      <div class="stage-name">STEP 02<br>플라스틱 용융</div>
+      <div class="stage-number">02 / 03</div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-caption">HIGH TEMPERATURE FURNACE</div>
+      <div class="temp-waiting" id="tempWaiting">
+        온도 데이터를 불러오고 있어요.<br>잠시만 기다려 주세요!
+      </div>
+
+      <div class="furnace">
+        <div class="furnace-top"></div>
+
+        <div class="furnace-mouth">
+          <div class="melted-object"></div>
+
+          <div class="liquid" id="liquid">
+            <div class="bubble b1"></div>
+            <div class="bubble b2"></div>
+            <div class="bubble b3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-main">
+        현재 온도
+        <div class="info-value" id="currentTemp">-- ℃</div>
+      </div>
+
+      <div class="info-main">
+        기준 온도
+        <div class="info-value" id="baseTempDisplay">-- ℃</div>
+      </div>
+
+      <div class="info-main">
+        목표 온도
+        <div class="info-value" id="targetTemp">-- ℃</div>
+      </div>
+
+      <div class="mini-progress">
+        <div id="meltBar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dialogue" id="meltDialogue">
+    용광로: 플라스틱이 녹을 수 있도록 온도를 높여 줘!
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section id="stage3" class="screen">
+  <div class="game-frame stage-screen">
+
+    <div class="stage-header">
+      <div class="stage-name">STEP 03<br>압축 및 완성</div>
+      <div class="stage-number">03 / 03</div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-caption">PLASTIC COMPRESSION ZONE</div>
+
+      <div class="press-machine">
+        <div class="press-roof"></div>
+        <div class="press-pillar"></div>
+        <div class="press-pillar right"></div>
+        <div class="press-rod" id="pressRod"></div>
+        <div class="press-plate" id="pressPlate"></div>
+        <div class="press-material" id="pressMaterial"></div>
+        <div class="press-floor"></div>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-main">
+        압축 진행 시간
+        <div class="info-value" id="pressTimer">4.0 SEC</div>
+      </div>
+
+      <div class="mini-progress">
+        <div id="pressBar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dialogue" id="pressDialogue">
+    압축기: 센서와 물체 사이를 1~10cm로 유지해 줘! 센서에 직접 닿으면 안 돼. 이 거리를 4초 동안 유지해 줘!
+  </div>
+</section>
+
+<!-- 최종 스토리텔링 엔딩: 아두이노 축하 멜로디 종료 신호 후 표시 -->
+<section id="endingScreen" class="screen">
+  <div class="game-frame">
+    <div class="story-ending">
+      <h1>MISSION COMPLETE!</h1>
+      <div class="story-dialogue-row">
+        <div class="pixel-bot" id="storyRobot">
+          <div class="bot-antenna"></div>
+          <div class="bot-head">
+            <div class="bot-eyes"></div>
+            <div class="bot-mouth"></div>
+          </div>
+          <div class="bot-body"><div class="bot-core"></div></div>
+          <div class="bot-arm left"></div>
+          <div class="bot-arm right"></div>
+          <div class="bot-leg left"></div>
+          <div class="bot-leg right"></div>
+        </div>
+        <div class="story-bubble" id="storyDialogue">
+          대단해! 플라스틱의 분쇄, 용융, 압축 공정을 모두 마쳤어.
+        </div>
+      </div>
+      <div class="story-controls" id="storyControls">
+        <button id="storyNextButton" onclick="nextStoryLine()">OK!</button>
+        <button id="thankYouButton" onclick="showReplayButton()" hidden>고마워!</button>
+        <button id="replayButton" onclick="replayGame()" hidden>PLAY AGAIN</button>
+      </div>
+      <div class="story-visual" id="storyVisual" hidden>
+      <div class="product-row" aria-label="재활용 플라스틱으로 만든 제품 예시">
+        <div class="product-item">
+          <div class="product-art"><div class="product-bottle"></div></div>
+          <span>재생 플라스틱 병</span>
+        </div>
+        <div class="product-item">
+          <div class="product-art"><div class="product-pot"></div></div>
+          <span>화분</span>
+        </div>
+        <div class="product-item">
+          <div class="product-art"><div class="product-box"></div></div>
+          <span>생활용품</span>
+        </div>
+      </div>
+      <p class="story-note">
+        재활용 원료는 가공 업체로 옮겨져 새로운 제품으로 다시 태어나!
+        <br>우리의 작은 실천이 자원 순환을 만들어 냈어.
+      </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+let port = null;
+let reader = null;
+let connected = false;
+let gameStarted = false;
+let gameFinished = false;
+let currentStage = 0;
+
+let currentTemp = null;
+let baseTemp = null;
+let targetTemp = null;
+let meltStartTemp = null;
+let lastMeltStep = 0;
+
+let timerInterval = null;
+let pressStart = null;
+
+const $ = id => document.getElementById(id);
+
+/* 컴퓨터 스피커 효과음: 기존 아두이노 부저 소리는 그대로 유지 */
+let audioContext = null;
+let introBgmTimer = null;
+let boilSoundTimer = null;
+let pressSoundTimer = null;
+let bgmNoteIndex = 0;
+let bgmVolumeMultiplier = 6.8;
+
+function getAudioContext() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!audioContext) audioContext = new AudioCtx();
+  if (audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function playTone(frequency, duration = 0.12, type = "square", volume = 0.035, endFrequency = null) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const now = ctx.currentTime;
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, now);
+  if (endFrequency) {
+    osc.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), now + duration);
+  }
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(volume, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + duration + 0.02);
+}
+
+function playHammerSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  // 짧은 저음 타격음 + 노이즈로 망치가 부딪히는 느낌
+  playTone(105, 0.16, "triangle", 0.44, 48);
+  const length = Math.floor(ctx.sampleRate * 0.09);
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+  }
+  const noise = ctx.createBufferSource();
+  const filter = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+  noise.buffer = buffer;
+  filter.type = "lowpass";
+  filter.frequency.value = 850;
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.30, ctx.currentTime + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  noise.start();
+}
+
+function startIntroBgm() {
+  const ctx = getAudioContext();
+  if (!ctx || introBgmTimer) return;
+  const notes = [523, 659, 784, 659, 587, 698, 880, 698, 523, 659, 784, 1047, 880, 784, 659, 587];
+  bgmNoteIndex = 0;
+  introBgmTimer = setInterval(() => {
+    if (!audioContext || audioContext.state !== "running") return;
+    const note = notes[bgmNoteIndex % notes.length];
+    playTone(note, 0.19, "square", 0.007 * bgmVolumeMultiplier);
+    if (bgmNoteIndex % 4 === 0) playTone(note / 2, 0.22, "triangle", 0.005 * bgmVolumeMultiplier);
+    bgmNoteIndex++;
+  }, 240);
+}
+
+function stopIntroBgm() {
+  if (introBgmTimer) {
+    clearInterval(introBgmTimer);
+    introBgmTimer = null;
+  }
+}
+
+function playBoilBubble() {
+  const startFrequency = 170 + Math.random() * 90;
+  playTone(startFrequency, 0.26, "sine", 0.24, startFrequency * 1.8);
+}
+
+function startBoilSound() {
+  if (boilSoundTimer) return;
+  getAudioContext();
+  playBoilBubble();
+  boilSoundTimer = setInterval(playBoilBubble, 300);
+}
+
+function stopBoilSound() {
+  if (boilSoundTimer) {
+    clearInterval(boilSoundTimer);
+    boilSoundTimer = null;
+  }
+}
+
+/* 압축기가 플라스틱을 누르는 동안 이어지는 낮은 기계음 */
+function playPressSound() {
+  // 낮은 웅- 소리와 짧은 압착음을 겹쳐 묵직한 느낌을 만듦
+  playTone(78, 0.34, "sawtooth", 0.18, 42);
+  playTone(115, 0.16, "triangle", 0.10, 68);
+}
+
+function startPressSound() {
+  if (pressSoundTimer) return;
+  playPressSound();
+  pressSoundTimer = setInterval(playPressSound, 520);
+}
+
+function stopPressSound() {
+  if (pressSoundTimer) {
+    clearInterval(pressSoundTimer);
+    pressSoundTimer = null;
+  }
+}
+
+
+/* 화면 전환 */
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(el => {
+    el.classList.remove("active");
+  });
+
+  $(id).classList.add("active");
+
+  // STEP 2·3에서는 BGM을 절반 크기로 낮춰 공정 효과음을 잘 들리게 함
+  bgmVolumeMultiplier =
+    (id === "stage2" || id === "stage3") ? 3.4 : 6.8;
+}
+
+/* 게임 시작 */
+function startGame() {
+  if (!connected) return;
+
+  gameStarted = true;
+  gameFinished = false;
+  currentStage = 1;
+
+  $("stage1").classList.remove("done");
+  $("crushCount").textContent = "0 / 10";
+  $("crushBar").style.width = "0%";
+
+  showScreen("stage1");
+}
+
+/* 망치질 애니메이션 */
+function playHammer() {
+  const area = $("crushArea");
+  const frame = $("stage1").querySelector(".game-frame");
+
+  playHammerSound();
+  frame.classList.remove("hit-shake");
+  void frame.offsetWidth;
+  frame.classList.add("hit-shake");
+  setTimeout(() => frame.classList.remove("hit-shake"), 180);
+
+  area.classList.remove("hit");
+  void area.offsetWidth;
+  area.classList.add("hit");
+
+  setTimeout(() => {
+    area.classList.remove("hit");
+  }, 350);
+}
+
+/* 용융 애니메이션 */
+function startMelting() {
+  $("stage2").classList.add("melting");
+  startBoilSound();
+}
+
+/* 온도 데이터 대기 안내 */
+function showTemperatureWaiting(show) {
+  $("tempWaiting").hidden = !show;
+}
+
+/* 온도에 따른 용융 진행: TARGET_TEMP를 받은 순간의 현재 온도를 0%로 설정 */
+function updateMelting() {
+  if (currentTemp === null) {
+    showTemperatureWaiting(true);
+    return;
+  }
+
+  $("currentTemp").textContent = currentTemp.toFixed(1) + " ℃";
+
+  if (baseTemp !== null) {
+    $("baseTempDisplay").textContent = baseTemp.toFixed(1) + " ℃";
+  }
+  if (targetTemp !== null) {
+    $("targetTemp").textContent = targetTemp.toFixed(1) + " ℃";
+  }
+
+  if (baseTemp === null || targetTemp === null || meltStartTemp === null) {
+    showTemperatureWaiting(true);
+    return;
+  }
+
+  showTemperatureWaiting(false);
+
+  const difference = targetTemp - meltStartTemp;
+  if (difference <= 0) return;
+
+  const ratio = Math.max(0, Math.min(1,
+    (currentTemp - meltStartTemp) / difference
+  ));
+  const percent = Math.round(ratio * 100);
+  const step = Math.min(5, Math.floor(ratio * 5 + 0.000001));
+
+  $("liquid").style.height = (20 + ratio * 65) + "%";
+  $("meltBar").style.width = percent + "%";
+
+  startMelting();
+
+  const stage2 = $("stage2");
+  for (let i = 1; i <= 5; i++) {
+    stage2.classList.remove("melt-step-" + i);
+  }
+  if (step > 0) stage2.classList.add("melt-step-" + step);
+
+  if (step > lastMeltStep) {
+    lastMeltStep = step;
+    const messages = [
+      "용융이 시작됐어! 플라스틱이 조금씩 부드러워지고 있어.",
+      "20% 진행! 플라스틱이 조금씩 녹고 있어.",
+      "40% 진행! 열이 플라스틱에 전달되고 있어.",
+      "60% 진행! 플라스틱이 더 많이 녹았어.",
+      "80% 진행! 거의 다 녹았어.",
+      "100% 진행! 목표 온도에 도달했어!"
+    ];
+    $("meltDialogue").textContent = messages[step];
+  } else if (step === 0) {
+    $("meltDialogue").textContent = "현재 온도에서 목표 온도까지 가열 중이야!";
+  }
+}
+
+/* 압축 시작 */
+function startPress() {
+  if (pressStart !== null) return;
+
+  pressStart = Date.now();
+  startPressSound();
+
+  $("stage3").classList.add("pressed");
+
+  if (timerInterval) clearInterval(timerInterval);
+
+  timerInterval = setInterval(() => {
+    if (pressStart === null) return;
+
+    const elapsed = (Date.now() - pressStart) / 1000;
+    const ratio = Math.min(1, elapsed / 4);
+    const remain = Math.max(0, 4 - elapsed);
+
+    $("pressTimer").textContent =
+      remain.toFixed(1) + " SEC";
+
+    $("pressBar").style.width =
+      (ratio * 100) + "%";
+
+    /* 압축판이 아래로 내려가는 모션 */
+    $("pressPlate").style.top =
+      (125 + ratio * 105) + "px";
+
+    $("pressRod").style.height =
+      (85 + ratio * 105) + "px";
+
+    /* 플라스틱이 점점 납작해짐 */
+    $("pressMaterial").style.height =
+      (60 - ratio * 35) + "px";
+
+    $("pressDialogue").textContent =
+      "압축 중... 기계가 내려가고 있어! " +
+      Math.round(ratio * 100) + "%";
+
+    if (ratio >= 1) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+
+      $("pressDialogue").textContent =
+        "압축 완료! 축하 노래가 끝나면 최종 재활용 이야기가 시작돼.";
+      $("pressTimer").textContent = "COMPLETE";
+      $("completeMessage").innerHTML =
+        "모든 압축 과정이 끝났어!<br>축하 노래가 끝나면 로봇과 함께 재활용 이야기를 만나 보자!";
+      $("completeOverlay").classList.add("active");
+      stopPressSound();
+      // 마지막 화면은 아두이노 축하 멜로디 종료 후 PROCESS_DONE 신호를 받아 표시
+    }
+
+  }, 40);
+}
+
+/* 압축 취소 */
+function cancelPress() {
+  $("completeOverlay").classList.remove("active");
+  pressStart = null;
+  stopPressSound();
+
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  $("stage3").classList.remove("pressed");
+
+  $("pressPlate").style.top = "125px";
+  $("pressRod").style.height = "85px";
+  $("pressMaterial").style.height = "60px";
+
+  $("pressTimer").textContent = "4.0 SEC";
+  $("pressBar").style.width = "0%";
+
+  $("pressDialogue").textContent =
+    "감지가 끊겼어! 센서와 물체 사이를 1~10cm로 유지해 줘. 센서에 닿지 않게 다시 놓아 줘."
+}
+
+/* 전체 공정 완료: 아두이노 축하 멜로디 종료 신호를 받은 뒤 스토리 시작 */
+const storyLines = [
+  "로봇: 대단해! 플라스틱의 분쇄, 용융, 압축 공정을 모두 마쳤어.",
+  "이제 압축된 플라스틱은 일정한 형태의 재활용 원료가 되었어!",
+  "이 재활용 원료는 가공 업체로 옮겨져 새로운 제품을 만드는 데 사용돼.",
+  "예를 들면 새 플라스틱 병이나 화분, 다양한 생활용품으로 다시 태어날 수 있지!",
+  "버려진 플라스틱도 올바른 과정을 거치면 소중한 자원이 될 수 있어.",
+  "우리의 작은 실천이 자원 순환을 만들어 내는 거야. 함께해 줘서 고마워!"
+];
+let storyIndex = 0;
+
+function finishGame() {
+  if (gameFinished) return;
+  gameFinished = true;
+  stopBoilSound();
+  stopPressSound();
+  pressStart = null;
+
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  $("completeOverlay").classList.remove("active");
+  storyIndex = 0;
+  $("storyDialogue").textContent = storyLines[0];
+  $("storyNextButton").hidden = false;
+  $("thankYouButton").hidden = true;
+  $("replayButton").hidden = true;
+  $("storyVisual").hidden = true;
+  $("storyRobot").hidden = false;
+  showScreen("endingScreen");
+}
+
+function nextStoryLine() {
+  if (storyIndex < storyLines.length - 1) {
+    storyIndex++;
+    $("storyDialogue").textContent = storyLines[storyIndex];
+  }
+
+  if (storyIndex >= storyLines.length - 1) {
+    $("storyNextButton").hidden = true;
+    $("storyVisual").hidden = false;
+    $("thankYouButton").hidden = false;
+  }
+}
+
+function showReplayButton() {
+  $("thankYouButton").hidden = true;
+  $("replayButton").hidden = false;
+}
+
+/* 다시 플레이: 페이지를 새로고침하지 않아 Web Serial 연결을 유지 */
+function replayGame() {
+  stopBoilSound();
+  stopPressSound();
+  cancelPress();
+
+  gameStarted = false;
+  gameFinished = false;
+  currentStage = 0;
+  $("completeOverlay").classList.remove("active");
+  storyIndex = 0;
+  $("storyVisual").hidden = true;
+  $("storyRobot").hidden = true;
+  $("storyNextButton").hidden = false;
+  $("thankYouButton").hidden = true;
+  $("replayButton").hidden = true;
+  currentTemp = null;
+  baseTemp = null;
+  targetTemp = null;
+  meltStartTemp = null;
+  lastMeltStep = 0;
+
+  $("stage1").classList.remove("done");
+  $("crushCount").textContent = "0 / 10";
+  $("crushBar").style.width = "0%";
+
+  $("meltBar").style.width = "0%";
+  $("currentTemp").textContent = "-- ℃";
+  $("baseTempDisplay").textContent = "-- ℃";
+  $("targetTemp").textContent = "-- ℃";
+  $("stage2").classList.remove("melting", "melt-complete");
+  for (let i = 1; i <= 5; i++) {
+    $("stage2").classList.remove("melt-step-" + i);
+  }
+  $("liquid").style.height = "20%";
+  showTemperatureWaiting(true);
+
+  $("pressPlate").style.top = "125px";
+  $("pressRod").style.height = "85px";
+  $("pressMaterial").style.height = "60px";
+  $("pressTimer").textContent = "4.0 SEC";
+  $("pressBar").style.width = "0%";
+  $("pressDialogue").textContent =
+    "아두이노 보드의 RESET 버튼을 누른 뒤 START를 눌러 줘.";
+
+  $("introMessage").textContent = connected
+    ? "연결 유지 중! 아두이노 보드의 RESET 버튼을 누른 뒤 START를 눌러 줘."
+    : "아두이노를 연결해 줘.";
+
+  $("startButton").disabled = !connected;
+  showScreen("introScreen");
+
+  // BGM은 끊지 않고 계속 재생한다.
+  if (connected) startIntroBgm();
+}
+
+/* 아두이노 신호 처리 */
+function processLine(line) {
+  line = line.trim();
+
+  if (!line) return;
+
+  console.log("[GREEN FACTORY]", line);
+
+  if (line === "SYSTEM_READY") {
+    connected = true;
+
+    $("connectionStatus").textContent = "● CONNECTED";
+    $("connectBtn").textContent = "CONNECTED";
+    $("connectBtn").disabled = true;
+    $("introMessage").textContent = "아두이노 연결 완료!";
+    $("startButton").disabled = false;
+    startIntroBgm();
+  }
+
+  if (line === "STEP1_READY") {
+    if (gameStarted) {
+      currentStage = 1;
+      showScreen("stage1");
+    }
+  }
+
+  if (line === "CRUSH") {
+    if (currentStage === 1) {
+      playHammer();
+
+      $("crushDialogue").textContent =
+        "쾅! 망치로 플라스틱을 부수고 있어!";
+    }
+  }
+
+  if (line.startsWith("COUNT:")) {
+    const count = parseInt(line.split(":")[1]);
+
+    if (!isNaN(count)) {
+      $("crushCount").textContent = count + " / 10";
+      $("crushBar").style.width = (count / 10 * 100) + "%";
+    }
+  }
+
+  if (line === "CRUSH_DONE") {
+    $("stage1").classList.add("done");
+
+    $("crushDialogue").textContent =
+      "분쇄 완료! 플라스틱이 잘게 부서졌어.";
+  }
+
+  if (line === "STEP2_READY") {
+    currentStage = 2;
+
+    currentTemp = null;
+    baseTemp = null;
+    targetTemp = null;
+    meltStartTemp = null;
+    lastMeltStep = 0;
+
+    $("meltBar").style.width = "0%";
+    $("currentTemp").textContent = "-- ℃";
+    $("baseTempDisplay").textContent = "-- ℃";
+    $("targetTemp").textContent = "-- ℃";
+
+    $("stage2").classList.remove("melting", "melt-complete");
+    for (let i = 1; i <= 5; i++) {
+      $("stage2").classList.remove("melt-step-" + i);
+    }
+    $("liquid").style.height = "20%";
+    showTemperatureWaiting(true);
+    $("meltDialogue").textContent = "온도 데이터를 불러오고 있어. 잠시만 기다려 줘!";
+
+    showScreen("stage2");
+  }
+
+  if (line.startsWith("TEMP:")) {
+    const value = parseFloat(line.split(":")[1]);
+
+    if (!isNaN(value)) {
+      currentTemp = value;
+      updateMelting();
+    }
+  }
+
+  if (line.startsWith("BASE_TEMP:")) {
+    const value = parseFloat(line.split(":")[1]);
+
+    if (!isNaN(value)) {
+      baseTemp = value;
+
+      $("baseTempDisplay").textContent =
+        value.toFixed(1) + " ℃";
+
+      updateMelting();
+    }
+  }
+
+  if (line.startsWith("TARGET_TEMP:")) {
+    const value = parseFloat(line.split(":")[1]);
+
+    if (!isNaN(value)) {
+      targetTemp = value;
+      meltStartTemp = currentTemp;
+      lastMeltStep = 0;
+
+      $("targetTemp").textContent =
+        value.toFixed(1) + " ℃";
+
+      updateMelting();
+    }
+  }
+
+  if (line === "MELT_DONE") {
+    stopBoilSound();
+    showTemperatureWaiting(false);
+    $("meltBar").style.width = "100%";
+    $("stage2").classList.add("melting", "melt-step-5", "melt-complete");
+    $("liquid").style.height = "100%";
+
+    $("meltDialogue").textContent =
+      "용융 완료! 이제 플라스틱을 압축하자.";
+  }
+
+  if (line === "STEP3_READY") {
+    currentStage = 3;
+    stopBoilSound();
+
+    cancelPress();
+    // 100% 용융 완료 화면을 잠시 보여준 뒤 3단계로 이동
+    setTimeout(() => showScreen("stage3"), 1500);
+  }
+
+  if (line === "PRESS_START") {
+    if (currentStage === 3) {
+      startPress();
+    }
+  }
+
+  if (line === "PRESS_CANCEL") {
+    if (currentStage === 3) {
+      cancelPress();
+    }
+  }
+
+  if (
+    line === "PROCESS_DONE" ||
+    line === "ALL_COMPLETE"
+  ) {
+    finishGame();
+  }
+}
+
+window.addEventListener("pagehide", () => {
+  stopIntroBgm();
+  stopBoilSound();
+  stopPressSound();
+});
+
+/* 아두이노 연결 */
+async function connectArduino() {
+  // CONNECT 버튼을 누른 동작으로 브라우저 오디오 재생 권한을 활성화
+  getAudioContext();
+  if (!("serial" in navigator)) {
+    alert("PC 크롬 또는 엣지 브라우저에서 접속해 주세요.");
+    return;
+  }
+
+  try {
+    port = await navigator.serial.requestPort();
+
+    await port.open({
+      baudRate: 9600
+    });
+
+    connected = true;
+
+    $("connectionStatus").textContent = "● CONNECTED";
+    $("connectBtn").textContent = "CONNECTED";
+    $("connectBtn").disabled = true;
+
+    startIntroBgm();
+    readSerial();
+
+  } catch (error) {
+    console.error(error);
+
+    alert(
+      "연결 실패! 아두이노 IDE의 시리얼 모니터를 닫고 다시 시도해 주세요."
+    );
+  }
+}
+
+/* 시리얼 데이터 읽기 */
+async function readSerial() {
+  const decoder = new TextDecoderStream();
+
+  const closed = port.readable.pipeTo(decoder.writable);
+
+  reader = decoder.readable.getReader();
+
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) break;
+
+      buffer += value;
+
+      const lines = buffer.split(/\r?\n/);
+
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        processLine(line);
+      }
+    }
+
+  } catch (error) {
+    console.error(error);
+    console.log("시리얼 통신 오류");
+
+  } finally {
+    reader.releaseLock();
+    await closed.catch(() => {});
+  }
+}
+</script>
+
+</body>
+</html>
